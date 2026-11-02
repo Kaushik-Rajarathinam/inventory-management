@@ -6,6 +6,7 @@ export default {
     orders: 'Orders',
     finance: 'Finance',
     demandForecast: 'Demand Forecast',
+    restocking: 'Restocking',
     companyName: 'Catalyst Components',
     subtitle: 'Inventory Management System'
   },
@@ -126,6 +127,47 @@ export default {
       status: 'Status',
       expectedDelivery: 'Expected Delivery',
       actualDelivery: 'Actual Delivery'
+    },
+    submittedOrders: {
+      title: 'Submitted Orders',
+      empty: 'No restocking orders have been submitted yet.',
+      loadError: 'Failed to load submitted orders',
+      submittedDate: 'Submitted',
+      leadTime: 'Lead Time',
+      leadTimeDays: '{days} days',
+      expectedDelivery: 'Expected Delivery'
+    }
+  },
+
+  // Restocking
+  restocking: {
+    title: 'Restocking',
+    description: 'Choose a budget and review the recommended restock order',
+    budget: 'Budget',
+    budgetMax: 'Max',
+    loadError: 'Failed to load recommendations',
+    totalCost: 'Total Cost',
+    remainingBudget: 'Remaining Budget',
+    orderLeadTime: 'Estimated Lead Time',
+    days: '{days} days',
+    recommendations: 'Recommended Items',
+    empty: 'This budget does not buy any items. Increase the budget to see recommendations.',
+    partial: 'Partial',
+    partialHint: 'Quantity is limited by the remaining budget',
+    placeOrder: 'Place Order',
+    placing: 'Placing order...',
+    orderSuccess: 'Order {orderNumber} placed. Estimated lead time: {days} days.',
+    orderError: 'Failed to place order',
+    table: {
+      sku: 'SKU',
+      name: 'Item',
+      trend: 'Trend',
+      shortfall: 'Shortfall',
+      quantity: 'Recommended Qty',
+      unitCost: 'Unit Cost',
+      lineTotal: 'Line Total',
+      leadTime: 'Lead Time (days)',
+      coverage: 'Coverage'
     }
   },
 
@@ -204,6 +246,7 @@ export default {
     shipped: 'Shipped',
     processing: 'Processing',
     backordered: 'Backordered',
+    submitted: 'Submitted',
     inStock: 'In Stock',
     lowStock: 'Low Stock',
     adequate: 'Adequate'

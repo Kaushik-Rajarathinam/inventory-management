@@ -75,6 +75,58 @@
         </div>
       </div>
     </div>
+
+    <!-- Restocking orders: independent of the Orders filters and loading state -->
+    <div class="card submitted-orders">
+      <div class="card-header">
+        <h3 class="card-title">{{ t('orders.submittedOrders.title') }} ({{ submittedOrders.length }})</h3>
+      </div>
+      <div v-if="submittedError" class="error">{{ submittedError }}</div>
+      <div v-else-if="submittedLoading" class="loading">{{ t('common.loading') }}</div>
+      <div v-else-if="submittedOrders.length === 0" class="submitted-empty">
+        {{ t('orders.submittedOrders.empty') }}
+      </div>
+      <div v-else class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>{{ t('orders.table.orderNumber') }}</th>
+              <th>{{ t('orders.submittedOrders.submittedDate') }}</th>
+              <th>{{ t('orders.table.items') }}</th>
+              <th class="num">{{ t('orders.table.totalValue') }}</th>
+              <th>{{ t('orders.table.status') }}</th>
+              <th class="num">{{ t('orders.submittedOrders.leadTime') }}</th>
+              <th>{{ t('orders.submittedOrders.expectedDelivery') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="order in submittedOrders" :key="order.id">
+              <td><strong>{{ order.order_number }}</strong></td>
+              <td>{{ formatDate(order.submitted_date) }}</td>
+              <td>
+                <details class="items-details">
+                  <summary class="items-summary">
+                    {{ t('orders.itemsCount', { count: order.items.length }) }}
+                  </summary>
+                  <div class="items-dropdown">
+                    <div v-for="item in order.items" :key="item.sku" class="item-entry">
+                      <span class="item-name">{{ translateProductName(item.name) }}</span>
+                      <span class="item-meta">{{ t('orders.quantity') }}: {{ item.quantity }} @ {{ formatMoney(item.unit_price, 2) }}</span>
+                    </div>
+                  </div>
+                </details>
+              </td>
+              <td class="num"><strong>{{ formatMoney(order.total_value, 2) }}</strong></td>
+              <td>
+                <span class="badge info">{{ submittedStatusLabel(order.status) }}</span>
+              </td>
+              <td class="num">{{ t('orders.submittedOrders.leadTimeDays', { days: order.lead_time_days }) }}</td>
+              <td>{{ formatDate(order.expected_delivery) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -83,6 +135,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { api } from '../api'
 import { useFilters } from '../composables/useFilters'
 import { useI18n } from '../composables/useI18n'
+import { formatCurrencyWithDecimals } from '../utils/currency'
 
 export default {
   name: 'Orders',
@@ -146,14 +199,46 @@ export default {
     const formatDate = (dateString) => {
       const { currentLocale } = useI18n()
       const locale = currentLocale.value === 'ja' ? 'ja-JP' : 'en-US'
-      return new Date(dateString).toLocaleDateString(locale, {
+      const date = new Date(dateString)
+      if (isNaN(date.getTime())) return '-'
+      return date.toLocaleDateString(locale, {
         year: 'numeric',
         month: 'short',
         day: 'numeric'
       })
     }
 
-    onMounted(loadOrders)
+    // Submitted restocking orders (not filter-driven; refreshed on every mount)
+    const submittedOrders = ref([])
+    const submittedLoading = ref(true)
+    const submittedError = ref(null)
+
+    const loadSubmittedOrders = async () => {
+      try {
+        submittedLoading.value = true
+        submittedError.value = null
+        submittedOrders.value = await api.getRestockingOrders()
+      } catch (err) {
+        submittedError.value = t('orders.submittedOrders.loadError') + ': ' + err.message
+      } finally {
+        submittedLoading.value = false
+      }
+    }
+
+    const formatMoney = (amount, decimals = 0) =>
+      formatCurrencyWithDecimals(Number(amount) || 0, currentCurrency.value, decimals)
+
+    // Translate known statuses (e.g. 'Submitted'); fall back to the raw value
+    const submittedStatusLabel = (status) => {
+      const key = `status.${String(status).toLowerCase()}`
+      const label = t(key)
+      return label === key ? status : label
+    }
+
+    onMounted(() => {
+      loadOrders()
+      loadSubmittedOrders()
+    })
 
     return {
       t,
@@ -163,6 +248,11 @@ export default {
       getOrdersByStatus,
       getOrderStatusClass,
       formatDate,
+      submittedOrders,
+      submittedLoading,
+      submittedError,
+      formatMoney,
+      submittedStatusLabel,
       currencySymbol,
       translateProductName,
       translateCustomerName
@@ -201,6 +291,21 @@ export default {
 
 .col-value {
   width: 120px;
+}
+
+.submitted-orders {
+  margin-top: 1.5rem;
+}
+
+.submitted-empty {
+  padding: 2rem;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.num {
+  text-align: right;
 }
 
 /* Items details styling */
